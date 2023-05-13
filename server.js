@@ -17,6 +17,14 @@ const openai = new OpenAIApi(configuration);
 
 app.get("/", async (req, res) => {
   const theme = req.body.theme;
+  const token = req.body.token
+  if(!token){
+    res.status(401).send("unauthorized")
+  }else{
+    if(token != process.env.token_){
+      res.status(401).send("unauthorized")
+    }
+  }
   if (theme) {
     try {
        const prompt = `Por favor, crie uma lista de tópicos para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! . O objetivo é a lista ser bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:

@@ -15,7 +15,7 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-app.get("/", async (req, res) => {
+app.post("/", async (req, res) => {
   const theme = req.body.theme;
   const token = req.body.token
   if(!token){
@@ -25,6 +25,7 @@ app.get("/", async (req, res) => {
       res.status(401).send("unauthorized")
     }
   }
+  //https://trail-generator.onrender.com/
   if (theme) {
     try {
        const prompt = `Por favor, crie uma lista de tópicos para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! . O objetivo é a lista ser bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:

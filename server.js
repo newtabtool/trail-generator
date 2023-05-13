@@ -16,9 +16,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 app.get("/", async (req, res) => {
-  console.log("Gerador de trilhas");
-  const theme = "react.js";
-  //const theme = req.body.theme;
+  const theme = req.body.theme;
   if (theme) {
     try {
        const prompt = `Por favor, crie uma lista de tópicos para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! . O objetivo é a lista ser bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:

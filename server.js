@@ -18,6 +18,8 @@ const openai = new OpenAIApi(configuration);
 app.post("/", async (req, res) => {
   const theme = req.body.theme;
   const token = req.body.token
+  console.log(token)
+  console.log(process.env.token_)
   if(!token){
     res.status(401).send("unauthorized")
   }else{
@@ -53,13 +55,13 @@ app.post("/", async (req, res) => {
       };
 
       const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         args: ["--no-sandbox"],
       });
 
       // Abre uma nova página
       const page = await browser.newPage();
-      let res = []
+      let resp = []
       let video = {}
       for (const result of result_array) {
         try {
@@ -137,11 +139,11 @@ app.post("/", async (req, res) => {
           }
           video.relateds = relateds
           console.log("video: "+video+"\n \n \n");
-          res.push(video)
+          resp.push(video)
 
         } catch (error) {}
       }
-      res.json({ response: res });
+      res.json({ resp });
       // console.log(result);
       //}
     } catch (error) {

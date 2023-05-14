@@ -55,88 +55,92 @@ app.post("/", async (req, res) => {
       };
 
       const browser = await puppeteer.launch({
-  headless: true,
-  args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
-  executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
-});
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
+        executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
+      });
 
-const resp = await Promise.all(result_array.map(async (result) => {
-  try {
-    const page = await browser.newPage();
-    await page.goto("https://duckduckgo.com/");
-    await page.waitForSelector("#search_form_input_homepage");
-    await page.type(
-      "#search_form_input_homepage",
-      theme + " " + result + " site:youtube.com"
-    );
-    await page.click("#search_button_homepage");
-    await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");
-    await page.click("#duckbar_static > li:nth-child(3) > a");
-    await page.waitForSelector(
-      "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
-    );
-    const element = await page.$(
-      "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
-    );
-    const title = await page.evaluate(
-      (element) => element.textContent,
-      element
-    );
-    const thumbnailElement = await page.$(
-      "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__media > img"
-    );
-    const thumbnail = await page.evaluate(
-      (thumbnailElement) => thumbnailElement.src,
-      thumbnailElement
-    );
-    const urlElement = await page.$(
-      "#zci-videos > div > div.tile-wrap > div > div:nth-child(3)"
-    );
-    const url = await page.evaluate(
-      (urlElement) => urlElement.getAttribute("data-link"),
-      urlElement
-    );
-    let relateds = [];
-    for (let i = 0; i < 5; i++) {
-      const element = await page.$(
-        `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
-          i + 3
-        }) > div.tile__body > h6 > a`
-      );
-      const title = await page.evaluate(
-        (element) => element.textContent,
-        element
-      );
-      const urlElement = await page.$(
-        `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
-          i + 3
-        })`
-      );
-      const url = await page.evaluate(
-        (urlElement) => urlElement.getAttribute("data-link"),
-        urlElement
-      );
-      const related = {
-        title: title,
-        url: url,
-      };
-      relateds.push(related);
-    }
-    await page.close();
-    return {
-      url: url,
-      thumbnail: thumbnail,
-      title: title,
-      channel: "Visite o video para ver o canal",
-      relateds: relateds
-    };
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}));
+      // Abre uma nova página
+      const page = await browser.newPage();
+      let resp = []
+      let video = {}
+      for (const result of result_array) {
+        try {
+          console.log("recomeçou");
+          await page.goto("https://duckduckgo.com/");
+          await page.waitForSelector("#search_form_input_homepage");
+          await page.type(
+            "#search_form_input_homepage",
+            theme + " " + result + " site:youtube.com"
+          );
+          await page.click("#search_button_homepage");
+          await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");
+          await page.click("#duckbar_static > li:nth-child(3) > a");
+          await page.waitForSelector(
+            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
+          );
+          const element = await page.$(
+            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
+          );
+          const title = await page.evaluate(
+            (element) => element.textContent,
+            element
+          );
+          console.log("Titulo do video: ", title);
+          const thumbnailElement = await page.$(
+            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__media > img"
+          );
+          thumbnail = await page.evaluate(
+            (thumbnailElement) => thumbnailElement.src,
+            thumbnailElement
+          );
+          const urlElement = await page.$(
+            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3)"
+          );
+          url = await page.evaluate(
+            (urlElement) => urlElement.getAttribute("data-link"),
+            urlElement
+          );
+          let relateds = [];
+            video.url = url
+            video.thumbnail = thumbnail
+            video.title = title
+            video.channel = "Visite o video para ver o canal"
 
-await browser.close();
+          for (let i = 0; i < 5; i++) {
+            const element = await page.$(
+              `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
+                i + 3
+              }) > div.tile__body > h6 > a`
+            );
+            const title = await page.evaluate(
+              (element) => element.textContent,
+              element
+            );
+           
+            const urlElement = await page.$(
+              `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
+                i + 3
+              })`
+            );
+            const url = await page.evaluate(
+              (urlElement) => urlElement.getAttribute("data-link"),
+              urlElement
+            );
+
+            const related = {
+              title: title,
+              url: url,
+            };
+
+            relateds.push(related);
+          }
+          video.relateds = relateds
+          resp.push(video)
+
+        } catch (error) {}
+      }
+      await browser.close();
       
       res.json({ resp });
       // console.log(result);

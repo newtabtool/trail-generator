@@ -30,7 +30,7 @@ app.post("/", async (req, res) => {
   //https://trail-generator.onrender.com/
   if (theme) {
     try {
-       const prompt = `Por favor, crie uma lista de tópicos para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! . O objetivo é a lista ser bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:
+       const prompt = `Por favor, crie uma lista de tópicos em portugues para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! . O objetivo é a lista ser bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:
       Adição!Subtração!Multiplicação!Divisão
       Observação: Não envie nada além da lista`;
       
@@ -65,12 +65,13 @@ app.post("/", async (req, res) => {
       let resp = []
       let video = {}
       for (const result of result_array) {
+        console.log("termo de busca: "+result)
         try {
           await page.goto("https://duckduckgo.com/");
           await page.waitForSelector("#search_form_input_homepage");
           await page.type(
             "#search_form_input_homepage",
-            theme + " " + result + " site:youtube.com"
+            theme + " " + result + "portugues site:youtube.com"
           );
           await page.click("#search_button_homepage");
           await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");

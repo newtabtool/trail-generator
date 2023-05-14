@@ -144,6 +144,8 @@ app.post("/", async (req, res) => {
 
         } catch (error) {}
       }
+      await browser.close();
+      
       res.json({ resp });
       // console.log(result);
       //}

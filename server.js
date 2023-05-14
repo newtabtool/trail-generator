@@ -131,6 +131,7 @@ app.post("/", async (req, res) => {
             const related = {
               title: title,
               url: url,
+              channel: "Trilha gerada automaticamente",
             };
 
             relateds.push(related);

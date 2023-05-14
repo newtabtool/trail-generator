@@ -55,7 +55,7 @@ app.post("/", async (req, res) => {
       };
 
       const browser = await puppeteer.launch({
-        headless: true,
+        headless: "new",
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
         executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
       });
@@ -66,7 +66,6 @@ app.post("/", async (req, res) => {
       let video = {}
       for (const result of result_array) {
         try {
-          console.log("recomeçou");
           await page.goto("https://duckduckgo.com/");
           await page.waitForSelector("#search_form_input_homepage");
           await page.type(

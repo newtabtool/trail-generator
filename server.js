@@ -16,8 +16,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 app.post("/", async (req, res) => {
-  const theme = "matemática básica";
-  //const theme = req.body.theme;
+  const theme = req.body.theme;
   const token = req.body.token;
   if (!token) {
     res.status(401).send("unauthorized");
@@ -143,15 +142,15 @@ app.post("/", async (req, res) => {
         //console.log("termo de busca: " + result);
 
         try {
+          
           await page.goto("https://duckduckgo.com/");
-          await page.waitForSelector("#search_form_input_homepage");
           await page.type(
             "#search_form_input_homepage",
             theme + " " + result + " portugues site:youtube.com"
           );
           await page.keyboard.press("Enter");
-          await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");
           await page.waitForNavigation();
+          //await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");
           await page.click("#duckbar_static > li:nth-child(3) > a");
           await page.waitForSelector(
             "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"

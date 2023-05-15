@@ -16,21 +16,20 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 app.post("/", async (req, res) => {
-  const theme = req.body.theme;
-  const token = req.body.token
-  console.log(token)
-  console.log(process.env.token_)
-  if(!token){
-    res.status(401).send("unauthorized")
-  }else{
-    if(token != process.env.token_){
-      res.status(401).send("unauthorized")
+  const theme = "matemática básica";
+  //const theme = req.body.theme;
+  const token = req.body.token;
+  if (!token) {
+    res.status(401).send("unauthorized");
+  } else {
+    if (token != process.env.token_) {
+      res.status(401).send("unauthorized");
     }
   }
   //https://trail-generator.onrender.com/
   if (theme) {
     try {
-       const prompt = `Por favor, crie uma lista de tópicos em portugues para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! . O objetivo é a lista ser bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:
+      const prompt = `Por favor, crie uma lista de tópicos em portugues para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! .a lista deve ser super bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:
       Adição!Subtração!Multiplicação!Divisão
       Observação: Não envie nada além da lista`;
       
@@ -52,97 +51,132 @@ app.post("/", async (req, res) => {
         name: theme,
         type: false,
         description: "",
-      };
-
+      }; 
       const browser = await puppeteer.launch({
-        headless: "new",
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
-        executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
+        headless: false,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--single-process",
+          "--no-zygote",
+        ],
+        executablePath:
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
       });
 
       // Abre uma nova página
       const page = await browser.newPage();
-      let resp = []
-      let video = {}
+      let resp = [];
+      let video = {};
+
+      async function getVideoData(page) {
+
+        try {
+          const result = await page.evaluate(() => {
+            const titleElement = document.querySelector(
+              "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
+            );
+            const thumbnailElement = document.querySelector(
+              "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__media > img"
+            );
+            const urlElement = document.querySelector(
+              "#zci-videos > div > div.tile-wrap > div > div:nth-child(3)"
+            );
+
+            const title = titleElement ? titleElement.textContent : "";
+            const thumbnail = thumbnailElement ? thumbnailElement.src : "";
+            const url = urlElement ? urlElement.getAttribute("data-link") : "";
+
+            return {
+              title: title,
+              thumbnail: thumbnail,
+              url: url,
+            };
+          });
+
+
+          const relateds = [];
+          for (let i = 0; i < 5; i++) {
+            const related = await page.evaluate((index) => {
+              const element = document.querySelector(
+                `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
+                  index + 3
+                }) > div.tile__body > h6 > a`
+              );
+              const title = element ? element.textContent : "";
+
+              const urlElement = document.querySelector(
+                `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
+                  index + 3
+                })`
+              );
+              const url = urlElement
+                ? urlElement.getAttribute("data-link")
+                : "";
+
+
+              return {
+                title: title,
+                url: url,
+                channel: "Trilha gerada automaticamente",
+              };
+            }, i);
+
+            relateds.push(related);
+          }
+
+          return {
+            title: result.title,
+            thumbnail: result.thumbnail,
+            url: result.url,
+            relateds: relateds,
+          };
+        } catch (error) {
+          console.log("Erro ao obter dados do vídeo:", error);
+          return null;
+        }
+      }
+
       for (const result of result_array) {
-        console.log("termo de busca: "+result)
+        //console.log("termo de busca: " + result);
+
         try {
           await page.goto("https://duckduckgo.com/");
           await page.waitForSelector("#search_form_input_homepage");
           await page.type(
             "#search_form_input_homepage",
-            theme + " " + result + "portugues site:youtube.com"
+            theme + " " + result + " portugues site:youtube.com"
           );
-          await page.click("#search_button_homepage");
+          await page.keyboard.press("Enter");
           await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");
+          await page.waitForNavigation();
           await page.click("#duckbar_static > li:nth-child(3) > a");
           await page.waitForSelector(
             "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
           );
-          const element = await page.$(
-            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
-          );
-          const title = await page.evaluate(
-            (element) => element.textContent,
-            element
-          );
-          console.log("Titulo do video: ", title);
-          const thumbnailElement = await page.$(
-            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__media > img"
-          );
-          thumbnail = await page.evaluate(
-            (thumbnailElement) => thumbnailElement.src,
-            thumbnailElement
-          );
-          const urlElement = await page.$(
-            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3)"
-          );
-          url = await page.evaluate(
-            (urlElement) => urlElement.getAttribute("data-link"),
-            urlElement
-          );
-          let relateds = [];
-            video.url = url
-            video.thumbnail = thumbnail
-            video.title = title
-            video.channel = "Visite o video para ver o canal"
-
-          for (let i = 0; i < 5; i++) {
-            const element = await page.$(
-              `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
-                i + 3
-              }) > div.tile__body > h6 > a`
-            );
-            const title = await page.evaluate(
-              (element) => element.textContent,
-              element
-            );
-           
-            const urlElement = await page.$(
-              `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
-                i + 3
-              })`
-            );
-            const url = await page.evaluate(
-              (urlElement) => urlElement.getAttribute("data-link"),
-              urlElement
-            );
-
-            const related = {
-              title: title,
-              url: url,
-              channel: "Trilha gerada automaticamente",
-            };
-
-            relateds.push(related);
-          }
-          video.relateds = relateds
-          resp.push(video)
-
-        } catch (error) {}
+          
+          const videoData = await getVideoData(page);
+          console.log(videoData);
+          const { title, thumbnail, url, relateds } = videoData;
+                const video = {
+                  title: title,
+                  thumbnail: thumbnail,
+                  url: url,
+                  channel: "Visite o vídeo para ver o canal",
+                  relateds: relateds,
+                };
+          resp.push(video);
+          
+        } catch (error) {
+          console.log("Erro durante a busca:", error);
+        }
       }
+
       await browser.close();
-      
+      console.log("finalizado");
+
       res.json({ resp });
       // console.log(result);
       //}

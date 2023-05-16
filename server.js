@@ -43,7 +43,7 @@ exemploRedis();
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 
-
+/* 
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -221,3 +221,4 @@ app.post("/", async (req, res) => {
     res.status(400).json({ error: "Tema não informado" });
   }
 });
+ */

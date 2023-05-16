@@ -1,5 +1,6 @@
 const express = require("express");
 const puppeteer = require("puppeteer");
+const Redis = require('ioredis');
 const app = express();
 const dotenv = require("dotenv");
 const { Configuration, OpenAIApi } = require("openai");
@@ -9,6 +10,40 @@ app.use(express.json());
 app.listen("3001", () => {
   console.log("Server is running...");
 });
+
+
+////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+
+
+// Cria uma instância do cliente Redis
+const redis = new Redis({
+  host: 'localhost',
+  port: 6379,
+});
+
+// Exemplo de utilização do Redis
+async function exemploRedis() {
+  // Define uma chave e valor no Redis
+  await redis.set('minhaChave', 'meuValor');
+
+  // Obtém o valor associado a uma chave no Redis
+  const valor = await redis.get('minhaChave');
+  console.log(valor);
+
+  // Executa outras operações com o Redis...
+}
+
+// Chama a função de exemplo
+exemploRedis();
+
+
+////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+
+
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,

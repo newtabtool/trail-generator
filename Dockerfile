@@ -1,8 +1,7 @@
 FROM ghcr.io/puppeteer/puppeteer:19.4.0
 
 # Instala o Redis
-RUN apt-get update && \
-    apt-get install -y redis-server
+RUN apt-get install -y redis-server
 
 # Configuração do Puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \

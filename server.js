@@ -1,49 +1,14 @@
 const express = require("express");
-const puppeteer = require("puppeteer");
-const Redis = require('ioredis');
 const app = express();
 const dotenv = require("dotenv");
 const { Configuration, OpenAIApi } = require("openai");
+const axios = require("axios");
 dotenv.config();
 
 app.use(express.json());
 app.listen("3001", () => {
   console.log("Server is running...");
 });
-
-
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-
-
-// Cria uma instância do cliente Redis
-const redis = new Redis({
-  host: 'localhost',
-  port: 6379,
-});
-
-// Exemplo de utilização do Redis
-async function exemploRedis() {
-  // Define uma chave e valor no Redis
-  await redis.set('minhaChave', 'meuValor');
-
-  // Obtém o valor associado a uma chave no Redis
-  const valor = await redis.get('minhaChave');
-  console.log(valor);
-
-  // Executa outras operações com o Redis...
-}
-
-// Chama a função de exemplo
-exemploRedis();
-
-
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-
-/* 
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -63,6 +28,7 @@ app.post("/", async (req, res) => {
   //https://trail-generator.onrender.com/
   if (theme) {
     try {
+      
       const prompt = `Por favor, crie uma lista de tópicos em portugues para alguém que quer aprender ${theme}. Para cada item da lista, inclua apenas o nome do tópico e separe por ! .a lista deve ser super bem detalhada. Por exemplo, se o assunto é matemática básica, a lista pode ser assim:
       Adição!Subtração!Multiplicação!Divisão
       Observação: Não envie nada além da lista`;
@@ -86,134 +52,64 @@ app.post("/", async (req, res) => {
         type: false,
         description: "",
       }; 
-      const browser = await puppeteer.launch({
-        headless: "new",
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--single-process",
-          "--no-zygote",
-        ],
-        executablePath:
-          process.env.NODE_ENV === "production"
-            ? process.env.PUPPETEER_EXECUTABLE_PATH
-            : puppeteer.executablePath(),
-      });
-
-      // Abre uma nova página
-      const page = await browser.newPage();
+      
+      
+     
+      let video = {}; 
       let resp = [];
-      let video = {};
 
-      async function getVideoData(page) {
-
-        try {
-          const result = await page.evaluate(() => {
-            const titleElement = document.querySelector(
-              "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
-            );
-            const thumbnailElement = document.querySelector(
-              "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__media > img"
-            );
-            const urlElement = document.querySelector(
-              "#zci-videos > div > div.tile-wrap > div > div:nth-child(3)"
-            );
-
-            const title = titleElement ? titleElement.textContent : "";
-            const thumbnail = thumbnailElement ? thumbnailElement.src : "";
-            const url = urlElement ? urlElement.getAttribute("data-link") : "";
-
-            return {
-              title: title,
-              thumbnail: thumbnail,
-              url: url,
-            };
-          });
-
-
-          const relateds = [];
-          for (let i = 0; i < 5; i++) {
-            const related = await page.evaluate((index) => {
-              const element = document.querySelector(
-                `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
-                  index + 3
-                }) > div.tile__body > h6 > a`
-              );
-              const title = element ? element.textContent : "";
-
-              const urlElement = document.querySelector(
-                `#zci-videos > div > div.tile-wrap > div > div:nth-child(${
-                  index + 3
-                })`
-              );
-              const url = urlElement
-                ? urlElement.getAttribute("data-link")
-                : "";
-
-
-              return {
-                title: title,
-                url: url,
-                channel: "Trilha gerada automaticamente",
-              };
-            }, i);
-
-            relateds.push(related);
-          }
-
-          return {
-            title: result.title,
-            thumbnail: result.thumbnail,
-            url: result.url,
-            relateds: relateds,
-          };
-        } catch (error) {
-          console.log("Erro ao obter dados do vídeo:", error);
-          return null;
-        }
-      }
+      console.time("total");
 
       for (const result of result_array) {
-        //console.log("termo de busca: " + result);
+        const url = `https://www.googleapis.com/customsearch/v1/siterestrict?key=${process.env.search_key}&cx=64f984679f0bb4d4c&q=${result}`;
+        await axios
+          .get(url)
+          .then((response) => {
+            const video_name = response.data.items[0].title;
+            const video_url = response.data.items[0].link;
+            const video_thumbnail =
+              response.data.items[0].pagemap.cse_thumbnail[0].src;
 
-        try {
-          
-          await page.goto("https://duckduckgo.com/");
-          await page.type(
-            "#search_form_input_homepage",
-            theme + " " + result + " portugues site:youtube.com"
-          );
-          await page.keyboard.press("Enter");
-          await page.waitForNavigation();
-          //await page.waitForSelector("#duckbar_static > li:nth-child(3) > a");
-          await page.click("#duckbar_static > li:nth-child(3) > a");
-          await page.waitForSelector(
-            "#zci-videos > div > div.tile-wrap > div > div:nth-child(3) > div.tile__body > h6 > a"
-          );
-          
-          const videoData = await getVideoData(page);
-          console.log(videoData);
-          const { title, thumbnail, url, relateds } = videoData;
-                const video = {
-                  title: title,
-                  thumbnail: thumbnail,
-                  url: url,
-                  channel: "Visite o vídeo para ver o canal",
-                  relateds: relateds,
-                };
-          resp.push(video);
-          
-        } catch (error) {
-          console.log("Erro durante a busca:", error);
-        }
+            const relateds = []; // Array para armazenar os vídeos relacionados
+
+            for (let i = 1; i <= 4; i++) {
+              try {
+                
+                if (response.data.items[i].pagemap.person[0].name) {
+                  const related_video_name = response.data.items[i].title;
+                  const related_video_url = response.data.items[i].link;
+                  const related_video_channel =
+                  response.data.items[i].pagemap.person[0].name;
+                  
+                  const related_video = {
+                    title: related_video_name,
+                    url: related_video_url,
+                    channel: related_video_channel,
+                  };
+                  
+                  relateds.push(related_video); // Adicionar vídeo relacionado ao array
+                }
+              } catch (error) {
+                
+              }
+            }
+
+             video = {
+              title: video_name,
+              url: video_url,
+              thumbnail: video_thumbnail,
+              relateds: relateds,
+            };
+            resp.push(video);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
       }
-
-      await browser.close();
+      console.timeEnd("total");
       console.log("finalizado");
-
+      console.log("Resposta: \n", resp);
       res.json({ resp });
-      // console.log(result);
-      //}
     } catch (error) {
       console.log(error);
     }
@@ -221,4 +117,3 @@ app.post("/", async (req, res) => {
     res.status(400).json({ error: "Tema não informado" });
   }
 });
- */

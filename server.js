@@ -61,7 +61,9 @@ app.post("/", async (req, res) => {
       console.time("total");
 
       for (const result of result_array) {
-        const url = `https://www.googleapis.com/customsearch/v1/siterestrict?key=${process.env.search_key}&cx=64f984679f0bb4d4c&q=${result}`;
+        const encodedResult = encodeURIComponent(result);
+        const url = `https://www.googleapis.com/customsearch/v1/siterestrict?key=${process.env.search_key}&cx=64f984679f0bb4d4c&q=${encodedResult}`;
+;
         await axios
           .get(url)
           .then((response) => {
